@@ -6,16 +6,19 @@ namespace VpnToggle
 {
     public class Config
     {
-        public string InterfaceName { get; set; } = "Ethernet"; // set "auto" to auto-detect
-        public string VpnGateway { get; set; } = "10.0.0.9";  // Unraid wg NAT IP
-        public string NormalDns { get; set; } = "10.0.0.1";  // pfSense
-        public string VpnDns { get; set; } = "10.64.0.1"; // Mullvad DNS
-        public int VpnMetric { get; set; } = 1;           // route metric for /1s
+        public string InterfaceName { get; set; } = "Ethernet";
+        public string VpnGateway { get; set; } = "10.0.0.9";
+        public string NormalDns { get; set; } = "10.0.0.1";
+        public string VpnDns { get; set; } = "10.64.0.1";
+        public int VpnMetric { get; set; } = 1;
+        public bool LastKnownVpnState { get; set; } = false;
 
+        // Change to match AppConfig paths:
         public static string ConfigPath =>
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                         "VpnToggle", "settings.json");
+                         "VpnToggle", "config.json"); // Changed from settings.json
 
+        // Update Load() to match AppConfig's pattern:
         public static Config Load()
         {
             try
@@ -23,19 +26,21 @@ namespace VpnToggle
                 if (File.Exists(ConfigPath))
                 {
                     var json = File.ReadAllText(ConfigPath);
-                    return JsonSerializer.Deserialize<Config>(json) ?? new Config();
+                    var cfg = JsonSerializer.Deserialize<Config>(json);
+                    if (cfg != null) return cfg;
                 }
             }
-            catch { /* ignore and use defaults */ }
-            return new Config();
+            catch { /* use defaults */ }
+            return new Config().Save(); // Chain save like AppConfig
         }
 
-        public void Save()
+        public Config Save() // Return this for chaining
         {
             var dir = Path.GetDirectoryName(ConfigPath)!;
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ConfigPath, json);
+            return this;
         }
     }
 }

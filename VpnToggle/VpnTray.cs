@@ -18,7 +18,7 @@ namespace VpnToggle
         private readonly ContextMenuStrip trayMenu;
         private readonly System.Windows.Forms.Timer statusTimer;
 
-        private readonly AppConfig cfg;
+        private readonly Config cfg;
 
         private readonly Icon iconOn;   // green
         private readonly Icon iconOff;  // red
@@ -26,7 +26,10 @@ namespace VpnToggle
         public VpnTray()
         {
             // Load config (from %AppData%\VpnToggle\config.json)
-            cfg = AppConfig.Load();
+            cfg = Config.Load();
+
+            // Clean up any stray routes on startup
+            RestoreLastKnownState();
 
             // Make simple nice-looking icons (no external files)
             iconOn = CreateCircleIcon(Color.FromArgb(24, 166, 84));  // green
@@ -101,6 +104,9 @@ namespace VpnToggle
                     RunExe("ipconfig", "/flushdns", out _, true);
 
                     ShowBalloon("VPN Toggle", $"Switched to VPN via {cfg.VpnGateway} on \"{ifaceAlias}\".");
+
+                    cfg.LastKnownVpnState = true; // or false for off
+                    cfg.Save();
                 }
                 else
                 {
@@ -116,6 +122,9 @@ namespace VpnToggle
                     RunExe("ipconfig", "/flushdns", out _, true);
 
                     ShowBalloon("VPN Toggle", "Switched to normal routing.");
+
+                    cfg.LastKnownVpnState = false; // or false for off
+                    cfg.Save();
                 }
 
                 UpdateTrayIcon();
@@ -160,6 +169,47 @@ namespace VpnToggle
             bool vpn = IsVpnSplitRoutesPresent();
             trayIcon.Icon = vpn ? iconOn : iconOff;
             trayIcon.Text = vpn ? "VPN Active" : "Normal Routing";
+        }
+
+        private void RestoreLastKnownState()
+        {
+            try
+            {
+                bool currentVpnState = IsVpnSplitRoutesPresent();
+                bool intendedVpnState = cfg.LastKnownVpnState;
+
+                if (currentVpnState != intendedVpnState)
+                {
+                    if (intendedVpnState && PingHost(cfg.VpnGateway))
+                    {
+                        // Restore VPN state
+                        var (ifaceAlias, ifIndex) = GetPrimaryInterface();
+                        RunExe("route", $"ADD 0.0.0.0 MASK 128.0.0.0 {cfg.VpnGateway} METRIC {cfg.VpnMetric} IF {ifIndex}", out _, true);
+                        RunExe("route", $"ADD 128.0.0.0 MASK 128.0.0.0 {cfg.VpnGateway} METRIC {cfg.VpnMetric} IF {ifIndex}", out _, true);
+                        RunExe("netsh", $"interface ip set dnsservers name=\"{ifaceAlias}\" static {cfg.VpnDns} primary", out _, true);
+                        ShowBalloon("VPN Toggle", "Restored VPN connection from previous session.");
+                    }
+                    else
+                    {
+                        // Restore normal state
+                        RestoreNormalState();
+                    }
+                }
+            }
+            catch { /* Ignore restoration errors */ }
+        }
+
+        private void RestoreNormalState()
+        {
+            try
+            {
+                RunExe("route", $"DELETE 0.0.0.0 MASK 128.0.0.0 {cfg.VpnGateway}", out _, true);
+                RunExe("route", $"DELETE 128.0.0.0 MASK 128.0.0.0 {cfg.VpnGateway}", out _, true);
+                var (ifaceAlias, _) = GetPrimaryInterface();
+                RunExe("netsh", $"interface ip set dnsservers name=\"{ifaceAlias}\" static {cfg.NormalDns} primary", out _, true);
+                RunExe("ipconfig", "/flushdns", out _, true);
+            }
+            catch { /* Ignore errors */ }
         }
 
         // ========= Helpers =========
@@ -276,53 +326,16 @@ namespace VpnToggle
 
         // ========= Config & Settings =========
 
-        public sealed class AppConfig
-        {
-            public string VpnGateway { get; set; } = "10.0.0.9";  // Unraid (Mullvad) router
-            public string NormalDns { get; set; } = "10.0.0.1";  // pfSense
-            public string VpnDns { get; set; } = "10.64.0.1"; // Mullvad DNS
-            public int VpnMetric { get; set; } = 1;
-
-            public static string ConfigDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VpnToggle");
-            public static string ConfigPath => Path.Combine(ConfigDir, "config.json");
-
-            public static AppConfig Load()
-            {
-                try
-                {
-                    if (File.Exists(ConfigPath))
-                    {
-                        var json = File.ReadAllText(ConfigPath);
-                        var cfg = JsonSerializer.Deserialize<AppConfig>(json);
-                        if (cfg != null) return cfg;
-                    }
-                }
-                catch { /* use defaults */ }
-                return new AppConfig().Save();
-            }
-
-            public AppConfig Save()
-            {
-                try
-                {
-                    Directory.CreateDirectory(ConfigDir);
-                    var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(ConfigPath, json);
-                }
-                catch { /* ignore */ }
-                return this;
-            }
-        }
 
         private sealed class SettingsForm : Form
         {
-            private readonly AppConfig cfg;
+            private readonly Config cfg;
             private readonly TextBox txtVpnGw = new() { Width = 220 };
             private readonly TextBox txtNormalDns = new() { Width = 220 };
             private readonly TextBox txtVpnDns = new() { Width = 220 };
             private readonly NumericUpDown numMetric = new() { Minimum = 1, Maximum = 50, Width = 80, Value = 1 };
 
-            public SettingsForm(AppConfig cfg)
+            public SettingsForm(Config cfg)
             {
                 this.cfg = cfg;
                 Text = "VPN Toggle Settings";
