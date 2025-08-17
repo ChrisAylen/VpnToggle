@@ -1,6 +1,6 @@
 # VpnToggle
 
-A lightweight Windows system tray application for quickly toggling between VPN and normal internet routing using split-tunnel techniques. Perfect for scenarios where you need to selectively route traffic through a VPN gateway while maintaining local network access.
+A lightweight Windows system tray application for quickly toggling between VPN and normal internet routing using split-tunnel techniques. Useful for scenarios where you need to selectively route traffic through a VPN gateway while maintaining local network access.
 
 ## Features
 
