@@ -27,10 +27,12 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout (exact tag)
         uses: actions/checkout@v4
         with:
-          fetch-tags: true
+            ref: ${{ github.ref }}   # checkout the tag that triggered the run
+            fetch-depth: 0           # full history incl. tags; avoids ref collisions
+
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
