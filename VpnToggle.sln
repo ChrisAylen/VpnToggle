@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VpnToggle", "VpnToggle\VpnToggle.csproj", "{8152552F-B55C-4078-A29B-14304CF2F06D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		VpnToggleInstaller.iss = VpnToggleInstaller.iss
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{C2019815-B6A3-4144-B9D1-64C817E4D352}"
 	ProjectSection(SolutionItems) = preProject

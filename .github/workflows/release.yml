@@ -67,6 +67,16 @@ jobs:
             "$($hash.Hash)  $($_.Name)" | Out-File -Append -FilePath SHA256SUMS.txt
           }
 
+      # New steps for installer
+      - name: Publish x64 for installer
+        run: dotnet publish $env:PROJECT_PATH -c Release -r win-x64 /p:PublishProfile=Folder-SelfContained
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes
+
+      - name: Build installer
+        run: iscc.exe VpnToggleInstaller.iss
+
       - name: Create/Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -74,6 +84,7 @@ jobs:
           files: |
             dist/*.zip
             dist/SHA256SUMS.txt
+            output/VpnToggle-Setup.exe 
           draft: false
           prerelease: false
         env:
