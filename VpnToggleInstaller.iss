@@ -8,7 +8,7 @@
 #define PubX64         "publish\win-x64"                           ; repo-root publish folder
 #define ProjectIcon    "VpnToggle\vpn_on.ico"
 #define DisplayIcon    PubX64 + "\VpnToggle.exe"
-#define MyVersion      GetFileVersion(PubX64 + "\VpnToggle.exe")   ; pulls version from your built exe
+#define MyVersion      GetCmdParam("MyVersion", "1.0.0")
 
 [Setup]
 AppId={#MyAppId}

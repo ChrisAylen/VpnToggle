@@ -75,15 +75,29 @@ jobs:
             "$($hash.Hash)  $($_.Name)" | Out-File -Append -FilePath SHA256SUMS.txt
           }
 
-      # New steps for installer
+      # Publish x64 to repo-root publish\win-x64 (no profile)
       - name: Publish x64 for installer
-        run: dotnet publish $env:PROJECT_PATH -c Release -r win-x64 /p:PublishProfile=Folder-SelfContained
+        run: |
+          $props = @(
+            '-p:PublishSingleFile=true',
+            '-p:SelfContained=true',
+            '-p:PublishTrimmed=false',
+            '-p:IncludeNativeLibrariesForSelfExtract=true',
+            '-p:DebugType=None',
+            '-p:TieredPGO=true',
+            '-p:ReadyToRun=true'
+          )
+          New-Item -ItemType Directory -Force -Path "publish\win-x64" | Out-Null
+          dotnet publish $env:PROJECT_PATH -c Release -r win-x64 @props -o "publish\win-x64"
+
 
       - name: Install Inno Setup
         run: choco install innosetup --yes
 
       - name: Build installer
-        run: iscc.exe VpnToggleInstaller.iss
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart("v")
+          iscc.exe /DMyVersion=$ver VpnToggleInstaller.iss
 
       - name: Create/Update GitHub Release
         uses: softprops/action-gh-release@v2
