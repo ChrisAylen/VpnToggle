@@ -8,7 +8,7 @@
 #define PubX64         "publish\win-x64"                           ; repo-root publish folder
 #define ProjectIcon    "VpnToggle\vpn_on.ico"
 #define DisplayIcon    PubX64 + "\VpnToggle.exe"
-#define MyVersion      GetCmdParam("MyVersion", "1.0.0")
+#define MyVersion      "1.0.0"                                     ; default, CI overrides via /DMyVersion=
 
 [Setup]
 AppId={#MyAppId}
@@ -16,7 +16,7 @@ AppName={#MyAppName}
 AppVersion={#MyVersion}
 AppVerName={#MyAppName} {#MyVersion}
 AppPublisher={#MyCompany}
-DefaultDirName={pf}\{#MyAppName}
+DefaultDirName={commonpf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableDirPage=no
 DisableProgramGroupPage=yes
@@ -24,7 +24,7 @@ OutputDir=output
 OutputBaseFilename=VpnToggle-Setup
 Compression=lzma2
 SolidCompression=yes
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 SetupIconFile={#ProjectIcon}
 UninstallDisplayIcon={#DisplayIcon}
@@ -67,5 +67,3 @@ Filename: "schtasks.exe"; \
 [UninstallRun]
 ; Remove the scheduled task on uninstall
 Filename: "schtasks.exe"; Parameters: "/Delete /TN ""{#MyAppName}"" /F"; Flags: runhidden; RunOnceId: "RemoveVpnToggleTask"
-
-
