@@ -1,6 +1,6 @@
 # VpnToggle
 
-A lightweight Windows system tray application for quickly toggling between VPN and normal internet routing using split-tunnel techniques. Useful for scenarios where you need to selectively route traffic through a VPN gateway while maintaining local network access.
+A lightweight Windows system tray application for quickly toggling between VPN and normal internet routing using split-tunnel techniques. Perfect for scenarios where you need to selectively route traffic through a VPN gateway while maintaining local network access.
 
 ## Features
 
@@ -52,6 +52,8 @@ On first run, VpnToggle creates a configuration file at:
 %AppData%\VpnToggle\config.json
 ```
 
+This file stores both your network settings and the last known VPN state (on/off) so the application can restore your preferred state when Windows restarts.
+
 ### Default Settings
 - **VPN Gateway**: `10.0.0.9` (Unraid WireGuard NAT IP)
 - **Normal DNS**: `10.0.0.1` (pfSense)
@@ -86,6 +88,8 @@ On first run, VpnToggle creates a configuration file at:
 - **Gateway reachability check**: Won't switch to VPN if gateway is unreachable
 - **Automatic cleanup**: Removes conflicting routes before applying new ones
 - **DNS flush**: Clears DNS cache when switching modes
+- **State persistence**: Remembers VPN on/off state across reboots and restores it automatically
+- **Startup restoration**: Detects and fixes connectivity issues from previous sessions
 
 ## Network Architecture Example
 
@@ -164,6 +168,16 @@ git push origin v1.0.0
 - Verify DNS server IPs in settings
 - Check Windows network adapter settings
 - Try running `ipconfig /flushdns` manually
+
+**No internet after reboot/startup**
+- The app automatically detects and fixes this issue
+- If problems persist, try toggling VPN off then on
+- Check that your VPN gateway is reachable from your network
+
+**VPN state not restored after reboot**
+- Check that the app is running with elevated privileges
+- Verify the configuration file exists at `%AppData%\VpnToggle\config.json`
+- Look for startup restoration messages in system tray notifications
 
 ### Manual Route Cleanup
 If routes get stuck, manually remove them:
