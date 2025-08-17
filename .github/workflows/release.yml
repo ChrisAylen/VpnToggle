@@ -48,7 +48,13 @@ jobs:
         run: dotnet restore $env:PROJECT_PATH
 
       - name: Build (Release with version from tag)
-        run: dotnet build $env:PROJECT_PATH -c Release --no-restore -p:ContinuousIntegrationBuild=true -p:Version=${{ github.ref_name }} -p:FileVersion=${{ github.ref_name }}
+        run: |
+            $ver = "${{ github.ref_name }}".TrimStart("v")   # e.g. v1.0.2 -> 1.0.2
+            dotnet build $env:PROJECT_PATH -c Release --no-restore `
+              -p:ContinuousIntegrationBuild=true `
+              -p:Version=$ver `
+              -p:FileVersion=$ver `
+              -p:InformationalVersion=${{ github.ref_name }}
 
       - name: Publish per RID (self-contained single-file)
         run: |
